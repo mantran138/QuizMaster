@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master · Game Lobby</title>
+    <script>
+        // Suppress Firebase console logging
+        (function() {
+            const originalLog = console.log;
+            const originalWarn = console.warn;
+            const originalInfo = console.info;
+            console.log = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('@firebase')) return;
+                originalLog.apply(console, args);
+            };
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('@firebase')) return;
+                originalWarn.apply(console, args);
+            };
+            console.info = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('@firebase')) return;
+                originalInfo.apply(console, args);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="../assets/css/chatbot.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <style>
+        .container.lobby-container {
+            max-width: 1100px !important;
+            overflow: visible !important;
+            min-height: auto !important;
+            height: auto !important;
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        .hide-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;  /* Chrome, Safari, Opera */
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+    <div class="grid-pattern"></div>
+
+    <div class="container lobby-container" id="main-container">
+        <!-- Header -->
+        <div class="header text-center mb-6">
+            <h1 class="text-4xl font-extrabold mb-2 title-gradient">Game Lobby</h1>
+            <p class="subtitle text-lg">Waiting for players to join...</p>
+            <div id="auth-status" class="text-sm mt-2" style="color: var(--text-muted);">Connecting...</div>
+        </div>
+
+        <!-- Room Code Display -->
+        <div class="glass-panel p-6 rounded-xl mb-6 text-center">
+            <h2 class="text-xl font-semibold mb-2" style="color: var(--text-secondary);">Room Code</h2>
+            <div id="lobby-room-code" class="text-5xl font-extrabold title-gradient tracking-widest mb-4">------</div>
+            <p class="text-sm" style="color: var(--neon-cyan);">📢 Share this code with your friends!</p>
+            <button id="copy-code-btn" class="secondary-btn px-4 py-2 rounded-lg mt-3 text-sm">📋 Copy Code</button>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Players List -->
+            <div class="glass-panel p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--glass-border);">
+                    👥 Players (<span id="player-count">0</span>)
+                </h3>
+                <div id="lobby-players-list" class="space-y-3 max-h-[300px] overflow-y-auto hide-scrollbar px-1">
+                    <!-- Players will be added here -->
+                </div>
+            </div>
+
+            <!-- Chat Panel -->
+            <div class="glass-panel p-6 rounded-xl flex flex-col h-[400px]">
+                <h3 class="text-xl font-bold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--glass-border);">💭 Live Chat</h3>
+                <div id="lobby-chat-messages" class="flex-grow overflow-y-auto mb-4 space-y-2"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="lobby-chat-input" class="glass-input flex-grow p-3 rounded-lg" placeholder="Type a message...">
+                    <button id="lobby-chat-send" class="primary-btn px-6 py-3 rounded-lg">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-6 flex flex-wrap justify-center gap-4">
+            <div id="host-start-section" class="hidden">
+                <button id="start-game-btn" class="primary-btn px-10 py-4 rounded-full text-lg font-semibold glow-effect">🎮 Start Game</button>
+            </div>
+            <button id="leave-room-btn" class="secondary-btn px-8 py-4 rounded-full font-semibold">🚪 Leave Room</button>
+        </div>
+
+        <!-- Multiplayer Game (hidden until game starts) -->
+        <div id="multiplayer-game" class="multiplayer-game grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 hidden">
+            <!-- Sidebar -->
+            <div class="lg:col-span-1 flex flex-col gap-4">
+                <!-- Scoreboard -->
+                <div class="glass-card p-4 rounded-xl">
+                    <h4 class="text-xl font-bold mb-3 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--glass-border);">⚔️ Live Scoreboard</h4>
+                    <div id="game-scoreboard" class="space-y-3"></div>
+                </div>
+                <!-- In-Game Chat -->
+                <div class="glass-card p-4 rounded-xl flex flex-col flex-grow overflow-hidden" style="min-height: 320px;">
+                    <h4 class="text-xl font-bold mb-3 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--glass-border);">💭 Live Chat</h4>
+                    <div id="chat-messages" class="flex-grow overflow-y-auto mb-4 space-y-2"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="chat-input" class="glass-input flex-grow p-2 rounded-lg min-w-0" placeholder="Type a message...">
+                        <button id="game-chat-send" class="primary-btn px-4 py-2 rounded-lg flex-shrink-0">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Area -->
+            <div class="lg:col-span-2 flex flex-col">
+                <div id="multiplayer-quiz-card" class="question-card flex-grow flex flex-col justify-center">
+                    <div id="mp-question-number" class="question-number"></div>
+                    <div id="mp-question-text" class="question-text"></div>
+                    <div id="mp-answers-container"></div>
+                    <div id="mp-feedback" class="feedback hidden"></div>
+                    <div id="mp-action-message" class="text-center text-lg font-bold mt-4 hidden" style="color: var(--warning);">Waiting for host to start the quiz...</div>
+                    <button id="mp-ready-btn" class="secondary-btn w-full py-3 rounded-full font-semibold mt-4 opacity-30 cursor-not-allowed" disabled>✋ Ready for Next</button>
+                </div>
+                <button id="mp-next-btn" class="primary-btn w-full py-3 rounded-full font-semibold mt-4 hidden">Next Question →</button>
+                
+                <!-- Game End Screen -->
+                <div id="mp-game-end" class="glass-card text-center p-8 rounded-xl mt-4 hidden">
+                    <div class="text-6xl mb-4">🏆</div>
+                    <h3 class="text-3xl font-bold title-gradient">Game Over!</h3>
+                    <p id="mp-final-message" class="text-xl mt-2" style="color: var(--text-secondary);"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Chat Button -->
+    <button class="chat-float-btn" id="chatFloatBtn" title="Chat with AI">
+        <svg class="chat-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+        </svg>
+        <svg class="close-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+    </button>
+
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-avatar"><img src="../assets/images/ai-avatar.svg" alt="AI" width="40" height="40"></div>
+                <div class="chat-title">
+                    <h3>Quiz Master AI</h3>
+                    <span>Powered by Gemini</span>
+                </div>
+            </div>
+            <button class="chat-close-btn" id="chatCloseBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="chat-commands" id="commandSuggestions">
+            <button class="cmd-chip" data-cmd="/ai">/ai</button>
+            <button class="cmd-chip" data-cmd="/q">/q</button>
+            <button class="cmd-chip" data-cmd="/qJson">/qJson</button>
+            <button class="cmd-chip" data-cmd="/help">/help</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <h4>👋 Welcome!</h4>
+                <p>Use commands to get started:</p>
+                <div class="welcome-commands">
+                    <button class="cmd-chip" data-cmd="/ai">💬 /ai</button>
+                    <button class="cmd-chip" data-cmd="/help">❓ /help</button>
+                </div>
+            </div>
+        </div>
+        <div class="typing-indicator hidden" id="typingIndicator">
+            <div class="message-avatar"><img src="../assets/images/ai-avatar.svg" alt="AI" width="35" height="35"></div>
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="file-preview" id="filePreview">
+            <div class="file-preview-info">
+                <div class="file-preview-icon">📄</div>
+                <div class="file-preview-details">
+                    <span class="file-preview-name" id="fileName"></span>
+                    <span class="file-preview-size" id="fileSize"></span>
+                </div>
+            </div>
+            <button class="file-preview-remove" id="removeFile">✕</button>
+        </div>
+        <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+                <input type="file" class="chat-file-input" id="fileInput" accept=".txt,.pdf,.docx,.png,.jpg,.jpeg">
+                <button class="chat-attach-btn" id="attachBtn">📎</button>
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type /help for commands..." autocomplete="off">
+                <button class="chat-send-btn" id="sendBtn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../assets/js/lobby.js"></script>
+    <script>
+        // Floating chat button toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const floatBtn = document.getElementById('chatFloatBtn');
+            const chatWindow = document.getElementById('chatWindow');
+            const closeBtn = document.getElementById('chatCloseBtn');
+            
+            if (floatBtn && chatWindow) {
+                floatBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    chatWindow.classList.toggle('active');
+                    floatBtn.classList.toggle('active');
+                });
+            }
+            
+            if (closeBtn && chatWindow && floatBtn) {
+                closeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    chatWindow.classList.remove('active');
+                    floatBtn.classList.remove('active');
+                });
+            }
+        });
+    </script>
+    <script src="../assets/js/chatbot.js"></script>
+</body>
+</html>

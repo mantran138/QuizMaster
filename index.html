@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./assets/css/styles.css">
+    <link rel="stylesheet" href="./assets/css/chatbot.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+    <div class="grid-pattern"></div>
+
+    <div class="container text-center">
+        <!-- Header with Logo -->
+        <div class="header mb-10">
+            <div class="mb-4">
+                <span class="text-6xl">🧠</span>
+            </div>
+            <h1 class="text-5xl font-extrabold mb-4 title-gradient">Quiz Master</h1>
+            <p class="subtitle text-lg">Test your knowledge. Challenge your friends. Become a master.</p>
+        </div>
+
+        <!-- Mode Selection Cards -->
+        <div class="flex flex-col gap-6">
+            <a href="./solo/index.html" class="mode-card">
+                <div class="mode-icon">⚡</div>
+                <h3 class="mode-title">Solo Mode</h3>
+                <p class="mode-description">Practice at your own pace with custom quizzes. Blitz mode, streaks & lives system included.</p>
+            </a>
+
+            <a href="./multiplayer/index.html" class="mode-card">
+                <div class="mode-icon">👥</div>
+                <h3 class="mode-title">Multiplayer Mode</h3>
+                <p class="mode-description">Compete in real-time with friends. Live reactions, leaderboards & podium finishes.</p>
+            </a>
+        </div>
+
+        <!-- Footer Badge -->
+        <div class="mt-10 text-center">
+            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-secondary);">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                Version 2.1 • Cyberpunk Edition
+            </span>
+        </div>
+    </div>
+
+    <!-- Floating Chat Button -->
+    <button class="chat-float-btn" id="chatFloatBtn" title="Chat with AI">
+        <svg class="chat-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+        </svg>
+        <svg class="close-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+    </button>
+
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-avatar"><img src="./assets/images/ai-avatar.svg" alt="AI" width="40" height="40"></div>
+                <div class="chat-title">
+                    <h3>Quiz Master AI</h3>
+                    <span>Powered by Gemini</span>
+                </div>
+            </div>
+            <button class="chat-close-btn" id="chatCloseBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="chat-commands" id="commandSuggestions">
+            <button class="cmd-chip" data-cmd="/ai">/ai</button>
+            <button class="cmd-chip" data-cmd="/q">/q</button>
+            <button class="cmd-chip" data-cmd="/qJson">/qJson</button>
+            <button class="cmd-chip" data-cmd="/help">/help</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <h4>👋 Welcome!</h4>
+                <p>Use commands to get started:</p>
+                <div class="welcome-commands">
+                    <button class="cmd-chip" data-cmd="/ai">💬 /ai</button>
+                    <button class="cmd-chip" data-cmd="/help">❓ /help</button>
+                </div>
+            </div>
+        </div>
+        <div class="typing-indicator hidden" id="typingIndicator">
+            <div class="message-avatar"><img src="./assets/images/ai-avatar.svg" alt="AI" width="35" height="35"></div>
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="file-preview" id="filePreview">
+            <div class="file-preview-info">
+                <div class="file-preview-icon">📄</div>
+                <div class="file-preview-details">
+                    <span class="file-preview-name" id="fileName"></span>
+                    <span class="file-preview-size" id="fileSize"></span>
+                </div>
+            </div>
+            <button class="file-preview-remove" id="removeFile">✕</button>
+        </div>
+        <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+                <input type="file" class="chat-file-input" id="fileInput" accept=".txt,.pdf,.docx,.png,.jpg,.jpeg">
+                <button class="chat-attach-btn" id="attachBtn">📎</button>
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type /help for commands..." autocomplete="off">
+                <button class="chat-send-btn" id="sendBtn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add page entrance animation
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.container').classList.add('page-enter');
+            
+            // Floating chat button toggle
+            const floatBtn = document.getElementById('chatFloatBtn');
+            const chatWindow = document.getElementById('chatWindow');
+            const closeBtn = document.getElementById('chatCloseBtn');
+            
+            if (floatBtn && chatWindow) {
+                floatBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    chatWindow.classList.toggle('active');
+                    floatBtn.classList.toggle('active');
+                });
+            }
+            
+            if (closeBtn && chatWindow && floatBtn) {
+                closeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    chatWindow.classList.remove('active');
+                    floatBtn.classList.remove('active');
+                });
+            }
+        });
+    </script>
+    <script src="./assets/js/chatbot.js"></script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master · Solo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="../assets/css/chatbot.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+    <div class="grid-pattern"></div>
+
+    <div class="container" id="main-container">
+        <!-- Header -->
+        <div class="header text-center mb-8">
+            <a href="../index.html" class="inline-flex items-center gap-2 mb-4 text-sm transition-all hover:gap-3" style="color: var(--text-secondary);">
+                <span>←</span> Back to Home
+            </a>
+            <h1 class="text-4xl font-extrabold mb-2 title-gradient">Solo Mode</h1>
+            <p class="subtitle text-lg">Load a quiz and test your knowledge</p>
+        </div>
+
+        <!-- Upload Section -->
+        <div id="upload-section" class="upload-section text-center cursor-pointer mb-8">
+            <div class="upload-icon">📚</div>
+            <h3 class="text-xl font-semibold mb-2" style="color: var(--text-primary);">Drop your JSON file here or click to browse</h3>
+            <p class="mb-6" style="color: var(--text-secondary);">Supported format: JSON with a <code style="color: var(--neon-cyan);">questions</code> array</p>
+            
+            <button id="trigger-file-input" class="primary-btn">
+                Choose File
+            </button>
+            <input type="file" id="file-input" class="hidden" accept=".json">
+
+            <!-- Mode Toggle -->
+            <div class="mt-8 mb-4">
+                <p class="text-sm mb-3" style="color: var(--text-secondary);">Select Game Mode:</p>
+                <div class="mode-toggle max-w-xs mx-auto">
+                    <button type="button" class="mode-toggle-btn active" data-mode="classic">🎯 Classic</button>
+                    <button type="button" class="mode-toggle-btn" data-mode="blitz">⚡ Blitz</button>
+                </div>
+                <!-- Mode Description -->
+                <div id="mode-description" class="mt-4 p-4 rounded-xl text-sm max-w-md mx-auto" style="background: var(--glass-bg); border: 1px solid var(--glass-border);">
+                    <p id="mode-desc-text" style="color: var(--text-secondary);">
+                        <span style="color: var(--neon-cyan); font-weight: 600;">Classic Mode:</span> Take your time to answer each question. No timer, no pressure. Perfect for learning and practice.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Example Format -->
+            <div class="code-block mt-6">
+<pre>{
+  "questions": [
+    {
+      "question": "What is the capital of France?",
+      "options": ["London", "Berlin", "Paris", "Madrid"],
+      "correct": 2
+    }
+  ]
+}
+<span class="highlight">✨ Options automatically shuffle each time!</span></pre>
+            </div>
+        </div>
+
+        <!-- Quiz Section -->
+        <div id="quiz-section" class="quiz-section hidden">
+            <!-- Timer Bar (Blitz Mode) -->
+            <div id="timer-container" class="timer-container hidden">
+                <div id="timer-fill" class="timer-fill" style="width: 100%;"></div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <!-- Game Stats Bar -->
+            <div class="game-stats">
+                <!-- Lives -->
+                <div class="stat-item">
+                    <div id="lives-container" class="lives-container">
+                        <span class="heart" data-index="0">❤️</span>
+                        <span class="heart" data-index="1">❤️</span>
+                        <span class="heart" data-index="2">❤️</span>
+                    </div>
+                </div>
+
+                <!-- Streak -->
+                <div id="streak-container" class="streak-container">
+                    <span class="streak-fire">🔥</span>
+                    <span id="streak-count" class="stat-value">0</span>
+                </div>
+
+                <!-- Points -->
+                <div class="stat-item">
+                    <span class="stat-icon">💎</span>
+                    <span id="points-display" class="points-display">0</span>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="question-card">
+                <div id="question-number" class="question-number"></div>
+                <div id="question-text" class="question-text"></div>
+                <div id="answers-container"></div>
+                <div id="feedback" class="feedback hidden"></div>
+                
+                <!-- Navigation -->
+                <div class="flex justify-between mt-6">
+                    <button id="prev-btn" class="nav-btn hidden">← Previous</button>
+                    <button id="next-btn" class="primary-btn ml-auto hidden">Next Question</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="results-section text-center hidden">
+            <h2 class="results-title">Quiz Complete! 🎉</h2>
+            
+            <!-- Score Circle -->
+            <div class="score-circle">
+                <span id="final-score" class="score-value">0%</span>
+            </div>
+
+            <!-- Stats Grid - Bento Style -->
+            <div class="stats-grid">
+                <div class="stat-card success">
+                    <div id="correct-count" class="value">0</div>
+                    <div class="label">Correct</div>
+                </div>
+                <div class="stat-card error">
+                    <div id="wrong-count" class="value">0</div>
+                    <div class="label">Wrong</div>
+                </div>
+                <div class="stat-card primary">
+                    <div id="total-questions" class="value">0</div>
+                    <div class="label">Total</div>
+                </div>
+                <div class="stat-card secondary">
+                    <div id="accuracy" class="value">0%</div>
+                    <div class="label">Accuracy</div>
+                </div>
+            </div>
+
+            <!-- Bonus Stats -->
+            <div class="stats-grid mb-6" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="stat-card">
+                    <div id="final-points" class="value" style="color: var(--neon-cyan);">0</div>
+                    <div class="label">Points</div>
+                </div>
+                <div class="stat-card">
+                    <div id="best-streak" class="value" style="color: var(--warning);">0</div>
+                    <div class="label">Best Streak</div>
+                </div>
+                <div class="stat-card">
+                    <div id="lives-remaining" class="value" style="color: var(--error);">0</div>
+                    <div class="label">Lives Left</div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button id="restart-quiz" class="primary-btn">🔄 Retake Quiz</button>
+                <button id="review-wrong" class="secondary-btn hidden">📝 Review Wrong</button>
+                <button id="new-quiz" class="secondary-btn">📂 New Quiz</button>
+            </div>
+        </div>
+
+        <!-- Game Over Overlay -->
+        <div id="game-over-overlay" class="game-over hidden">
+            <div class="game-over-content">
+                <div class="text-8xl mb-6">💀</div>
+                <h2 class="results-title">Game Over!</h2>
+                <p class="subtitle mb-8">You ran out of lives</p>
+                <div class="action-buttons">
+                    <button id="retry-btn" class="primary-btn">🔄 Try Again</button>
+                    <button id="back-btn" class="secondary-btn">📂 New Quiz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti Container -->
+    <div id="confetti-container"></div>
+
+    <!-- Floating Chat Button -->
+    <button class="chat-float-btn" id="chatFloatBtn" title="Chat with AI">
+        <svg class="chat-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+        </svg>
+        <svg class="close-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+    </button>
+
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-avatar"><img src="../assets/images/ai-avatar.svg" alt="AI" width="40" height="40"></div>
+                <div class="chat-title">
+                    <h3>Quiz Master AI</h3>
+                    <span>Powered by Gemini</span>
+                </div>
+            </div>
+            <button class="chat-close-btn" id="chatCloseBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="chat-commands" id="commandSuggestions">
+            <button class="cmd-chip" data-cmd="/ai">/ai</button>
+            <button class="cmd-chip" data-cmd="/q">/q</button>
+            <button class="cmd-chip" data-cmd="/qJson">/qJson</button>
+            <button class="cmd-chip" data-cmd="/help">/help</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <h4>👋 Need help?</h4>
+                <p>I can assist with quiz questions!</p>
+                <div class="welcome-commands">
+                    <button class="cmd-chip" data-cmd="/ai">💬 /ai</button>
+                    <button class="cmd-chip" data-cmd="/help">❓ /help</button>
+                </div>
+            </div>
+        </div>
+        <div class="typing-indicator hidden" id="typingIndicator">
+            <div class="message-avatar"><img src="../assets/images/ai-avatar.svg" alt="AI" width="35" height="35"></div>
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="file-preview" id="filePreview">
+            <div class="file-preview-info">
+                <div class="file-preview-icon">📄</div>
+                <div class="file-preview-details">
+                    <span class="file-preview-name" id="fileName"></span>
+                    <span class="file-preview-size" id="fileSize"></span>
+                </div>
+            </div>
+            <button class="file-preview-remove" id="removeFile">✕</button>
+        </div>
+        <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+                <input type="file" class="chat-file-input" id="fileInput" accept=".txt,.pdf,.docx,.png,.jpg,.jpeg">
+                <button class="chat-attach-btn" id="attachBtn">📎</button>
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type /help for commands..." autocomplete="off">
+                <button class="chat-send-btn" id="sendBtn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../assets/js/solo.js"></script>
+    <script>
+        // Floating chat button toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const floatBtn = document.getElementById('chatFloatBtn');
+            const chatWindow = document.getElementById('chatWindow');
+            const closeBtn = document.getElementById('chatCloseBtn');
+            
+            if (floatBtn && chatWindow) {
+                floatBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    chatWindow.classList.toggle('active');
+                    floatBtn.classList.toggle('active');
+                });
+            }
+            
+            if (closeBtn && chatWindow && floatBtn) {
+                closeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    chatWindow.classList.remove('active');
+                    floatBtn.classList.remove('active');
+                });
+            }
+        });
+    </script>
+    <script src="../assets/js/chatbot.js"></script>
+</body>
+</html>
