@@ -75,6 +75,47 @@ function bindUI() {
         elements.joinRoomCode.value = code.toUpperCase();
         elements.joinName?.focus();
     }
+    
+    // Check if coming from chatbot
+    if (params.get("from") === "chatbot") {
+        checkChatbotQuiz();
+    }
+}
+
+// Check for chatbot quiz data and auto-create room
+async function checkChatbotQuiz() {
+    const quizDataStr = sessionStorage.getItem('chatbot_quiz_data');
+    const playerName = sessionStorage.getItem('chatbot_player_name');
+    const isHost = sessionStorage.getItem('chatbot_is_host') === 'true';
+    
+    if (quizDataStr && playerName && isHost) {
+        try {
+            const quizJson = JSON.parse(quizDataStr);
+            if (quizJson.questions && Array.isArray(quizJson.questions) && quizJson.questions.length > 0) {
+                // Pre-fill the host name
+                if (elements.hostName) {
+                    elements.hostName.value = playerName;
+                }
+                
+                // Show loading state
+                if (elements.hostFileStatus) {
+                    elements.hostFileStatus.textContent = "Quiz loaded from AI Chat ✓";
+                    elements.hostFileStatus.style.color = "#10b981";
+                }
+                
+                // Store quiz for auto-creation after auth
+                window.pendingChatbotQuiz = {
+                    quizJson,
+                    playerName
+                };
+                
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (e) {
+            console.error('Failed to load chatbot quiz:', e);
+        }
+    }
 }
 
 // Wait for DOM to be ready before initializing
@@ -129,9 +170,74 @@ async function initializeFirebase() {
                 resolve();
             });
         });
+        
+        // Auto-create room if coming from chatbot
+        if (window.pendingChatbotQuiz && userId) {
+            await createRoomFromChatbot();
+        }
     } catch (error) {
         console.error("Firebase init error", error);
         elements.authStatus.textContent = "Firebase init failed";
+    }
+}
+
+// Create room automatically from chatbot data
+async function createRoomFromChatbot() {
+    const { quizJson, playerName } = window.pendingChatbotQuiz;
+    
+    try {
+        // Shuffle answer options for each question
+        quizJson.questions.forEach((question) => {
+            if (!Array.isArray(question.options) || question.correct == null) {
+                return;
+            }
+            const correctAnswer = question.options[question.correct];
+            const shuffledIndices = [...Array(question.options.length).keys()];
+            for (let i = shuffledIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+            }
+            const shuffledOptions = shuffledIndices.map((idx) => question.options[idx]);
+            question.options = shuffledOptions;
+            question.correct = shuffledOptions.indexOf(correctAnswer);
+        });
+
+        const roomId = generateRoomId();
+        const roomRef = doc(db, ROOMS_COLLECTION, roomId);
+        const roomData = {
+            roomId,
+            hostId: userId,
+            hostName: playerName,
+            quiz: quizJson,
+            state: "lobby",
+            currentQuestionIndex: 0,
+            createdAt: Date.now(),
+            questionStartTime: null,
+            playersAnswered: []
+        };
+
+        await setDoc(roomRef, roomData);
+        await addPlayerToRoom(roomId, playerName, true);
+        
+        // Clean up sessionStorage
+        sessionStorage.removeItem('chatbot_quiz_data');
+        sessionStorage.removeItem('chatbot_player_name');
+        sessionStorage.removeItem('chatbot_is_host');
+        window.pendingChatbotQuiz = null;
+        
+        // Save to session and redirect to lobby page
+        sessionStorage.setItem("quizmaster_room", JSON.stringify({
+            roomId: roomId,
+            playerName: playerName,
+            host: true
+        }));
+        
+        navigateToLobby(roomId);
+    } catch (error) {
+        console.error("Failed to create room from chatbot:", error);
+        if (elements.hostError) {
+            elements.hostError.textContent = `Failed to create room: ${error.message}`;
+        }
     }
 }
 

@@ -429,8 +429,17 @@ body {
     transform: scale(0.8);
 }
 
+.heart.half {
+    opacity: 0.8;
+    animation: pulse-half 1.5s ease-in-out infinite;
+}
+
 .heart.losing {
     animation: heartBreak 0.5s ease-out;
+}
+
+.heart.healing {
+    animation: heartHeal 0.5s ease-out;
 }
 
 @keyframes heartBreak {
@@ -438,6 +447,17 @@ body {
     25% { transform: scale(1.3) rotate(-10deg); }
     50% { transform: scale(0.8) rotate(10deg); }
     100% { transform: scale(0.8); filter: grayscale(1); opacity: 0.3; }
+}
+
+@keyframes heartHeal {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); filter: brightness(1.5) drop-shadow(0 0 10px #10b981); }
+    100% { transform: scale(1); }
+}
+
+@keyframes pulse-half {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
 }
 
 /* Streak Counter */

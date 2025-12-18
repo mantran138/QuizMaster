@@ -728,3 +728,93 @@
     border: 1px solid rgba(0, 255, 136, 0.3);
     color: #00ff88;
 }
+
+/* ============================================
+   QUIZ FLOW BUTTONS
+   ============================================ */
+.quiz-flow-buttons {
+    padding: 10px 20px 20px;
+}
+
+.flow-prompt {
+    color: var(--chat-text-secondary);
+    font-size: 14px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.flow-btn-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.flow-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 15px 20px;
+    min-width: 100px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--chat-glass-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--chat-text-primary);
+}
+
+.flow-btn:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.flow-btn.solo-btn:hover,
+.flow-btn.classic-btn:hover {
+    border-color: var(--chat-neon-cyan);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+}
+
+.flow-btn.multi-btn:hover,
+.flow-btn.blitz-btn:hover {
+    border-color: var(--chat-neon-magenta);
+    box-shadow: 0 0 20px rgba(255, 0, 229, 0.3);
+}
+
+.flow-btn.download-btn:hover {
+    border-color: var(--chat-neon-purple);
+    box-shadow: 0 0 20px rgba(177, 74, 237, 0.3);
+}
+
+.flow-icon {
+    font-size: 24px;
+}
+
+.flow-label {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.flow-desc {
+    font-size: 11px;
+    color: var(--chat-text-secondary);
+    text-align: center;
+    max-width: 120px;
+}
+
+/* Animation for buttons appearing */
+.quiz-flow-buttons {
+    animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

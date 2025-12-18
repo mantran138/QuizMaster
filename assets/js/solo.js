@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Game Mode State
     let gameMode = 'classic'; // 'classic' or 'blitz'
     let lives = 3;
+    const MAX_LIVES = 3; // Maximum health
     let streak = 0;
     let bestStreak = 0;
     let points = 0;
@@ -143,6 +144,52 @@ document.addEventListener('DOMContentLoaded', () => {
         gameOverOverlay.classList.add('hidden');
         resetToUpload();
     });
+
+    // ==================== CHATBOT INTEGRATION ====================
+    // Check if coming from chatbot with quiz data
+    checkChatbotQuiz();
+
+    function checkChatbotQuiz() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('from') === 'chatbot') {
+            const quizDataStr = sessionStorage.getItem('chatbot_quiz_data');
+            const quizMode = sessionStorage.getItem('chatbot_quiz_mode');
+            
+            if (quizDataStr) {
+                try {
+                    const quizJson = JSON.parse(quizDataStr);
+                    if (quizJson.questions && Array.isArray(quizJson.questions) && quizJson.questions.length > 0) {
+                        originalQuizData = quizJson;
+                        
+                        // Set the game mode
+                        if (quizMode === 'blitz') {
+                            gameMode = 'blitz';
+                            modeToggleBtns.forEach(btn => {
+                                btn.classList.toggle('active', btn.dataset.mode === 'blitz');
+                            });
+                            if (modeDescText) {
+                                modeDescText.innerHTML = modeDescriptions['blitz'];
+                            }
+                        } else {
+                            gameMode = 'classic';
+                        }
+                        
+                        // Clean up sessionStorage
+                        sessionStorage.removeItem('chatbot_quiz_data');
+                        sessionStorage.removeItem('chatbot_quiz_mode');
+                        
+                        // Clear URL params
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        
+                        // Start the quiz immediately
+                        startQuiz();
+                    }
+                } catch (e) {
+                    console.error('Failed to load chatbot quiz:', e);
+                }
+            }
+        }
+    }
 
     // ==================== CORE FUNCTIONS ====================
 
@@ -313,6 +360,12 @@ document.addEventListener('DOMContentLoaded', () => {
             stats.totalCorrect += 1;
             streak += 1;
             
+            // Heal half a heart if not at full health
+            if (lives < MAX_LIVES) {
+                lives = Math.min(lives + 0.5, MAX_LIVES);
+                updateLivesDisplay(false, true); // animate heal
+            }
+            
             // Calculate points based on time left (blitz mode)
             let earnedPoints = BASE_POINTS;
             if (gameMode === 'blitz') {
@@ -437,11 +490,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ==================== UI UPDATE FUNCTIONS ====================
 
-    function updateLivesDisplay(animate = false) {
+    function updateLivesDisplay(animateLoss = false, animateHeal = false) {
         const hearts = livesContainer.querySelectorAll('.heart');
         hearts.forEach((heart, index) => {
-            if (index >= lives) {
-                if (animate && index === lives) {
+            const heartThreshold = index + 1; // Heart 0 represents lives 0-1, Heart 1 represents lives 1-2, etc.
+            
+            // Remove all states first
+            heart.classList.remove('lost', 'losing', 'half', 'healing');
+            
+            if (lives >= heartThreshold) {
+                // Full heart
+                heart.textContent = '❤️';
+                if (animateHeal && lives === heartThreshold && lives % 1 === 0) {
+                    // Just healed to full
+                    heart.classList.add('healing');
+                    setTimeout(() => heart.classList.remove('healing'), 500);
+                }
+            } else if (lives >= heartThreshold - 0.5 && lives < heartThreshold) {
+                // Half heart
+                heart.textContent = '💔';
+                heart.classList.add('half');
+                if (animateHeal) {
+                    heart.classList.add('healing');
+                    setTimeout(() => heart.classList.remove('healing'), 500);
+                }
+            } else {
+                // Empty heart
+                heart.textContent = '🖤';
+                if (animateLoss && Math.ceil(lives) === index) {
                     heart.classList.add('losing');
                     setTimeout(() => {
                         heart.classList.remove('losing');
@@ -450,8 +526,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     heart.classList.add('lost');
                 }
-            } else {
-                heart.classList.remove('lost', 'losing');
             }
         });
     }
