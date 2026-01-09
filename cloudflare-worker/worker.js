@@ -1,20 +1,3 @@
-/**
- * Quiz Master AI Proxy - Cloudflare Worker
- * 
- * This worker securely proxies requests to the Gemini API
- * without exposing your API key to the frontend.
- * 
- * SETUP:
- * 1. Go to https://dash.cloudflare.com/
- * 2. Create a free account (if you don't have one)
- * 3. Go to Workers & Pages → Create Worker
- * 4. Paste this code
- * 5. Go to Settings → Variables → Add Environment Variable:
- *    - Name: GEMINI_API_KEY
- *    - Value: Your API key (paste from GitHub secret)
- * 6. Deploy and copy your worker URL (e.g., https://quiz-ai.your-name.workers.dev)
- */
-
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Allowed origins (update with your GitHub Pages URL)
