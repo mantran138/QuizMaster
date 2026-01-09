@@ -1,14 +1,8 @@
 /**
  * Quiz Master - Gemini API Proxy Server
  * 
- * This simple Node.js server acts as a proxy to hide your Gemini API key
+ * This simple Node.js server acts as a proxy to hide Gemini API key
  * from the client-side code. Use this for production deployments.
- * 
- * SETUP:
- * 1. Install dependencies: npm install express cors dotenv
- * 2. Create a .env file with: GEMINI_API_KEY=your_key_here
- * 3. Run: node server/proxy.js
- * 4. Update chatbot.js config: useProxy = true
  */
 
 const express = require('express');
